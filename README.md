@@ -1,2 +1,2 @@
 # Nebulous-ConquestBotMod
-Small BepInEx plugin for the WIP Nebulous Conquest Discord bot
+Small game plugin for the WIP Nebulous Conquest Discord bot. Find releases in the Steam Workshop upload.
