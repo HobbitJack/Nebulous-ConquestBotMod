@@ -20,7 +20,7 @@ namespace ConquestBotMod
 
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
-            public static void WriteJSON(Game.AfterActionReport AAR)
+            private static void WriteJSON(Game.AfterActionReport AAR)
             {
                 StreamWriter streamWriter = new StreamWriter(Application.streamingAssetsPath + string.Format("/{0}_{1}{2}_match.json", System.DateTime.Now.ToShortDateString().Replace("/", "-"), System.DateTime.Now.Hour, (System.DateTime.Now.Minute)));
                 streamWriter.WriteLine("{");
