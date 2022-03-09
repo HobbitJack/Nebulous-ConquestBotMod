@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<ModInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ModName>ConquestBotMod</ModName>
+  <ModDescription>Implements functionality necessary for the WIP Max's Conquest Bot to work.</ModDescription>
+  <ModVer>0.0.0.1</ModVer>
+  <Assemblies>
+    <string>ConquestBotMod.dll</string>
+	<string>0Harmony.dll</string>
+  </Assemblies>
+</ModInfo>

@@ -1,5 +1,4 @@
-﻿using BepInEx;
-using HarmonyLib;
+﻿using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
@@ -7,13 +6,14 @@ using System;
 
 namespace ConquestBotMod
 {
-    [BepInPlugin("org.conquestbot.plugin", "ConquestBotPlugin", "0.1")]
-    [BepInProcess("Nebulous.exe")]
-    public class PatchLoader : BaseUnityPlugin
+    public class ConquestBotMod : Modding.IModEntryPoint
     {
-        private void Awake()
+        void Modding.IModEntryPoint.PreLoad() {
+            Debug.Log("Loading ConquestBotMod Version 0.0.0.1");
+         }
+
+        void Modding.IModEntryPoint.PostLoad()
         {
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
             Harmony harmony = new Harmony("org.conquestbot.plugin");
             harmony.PatchAll();
         }
