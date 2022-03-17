@@ -2,7 +2,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
-using System;
 
 namespace ConquestBotMod
 {
@@ -15,10 +14,11 @@ namespace ConquestBotMod
         public struct ShipComponent {
             public string Name { get; set; }
             public string Key { get; set; }
+            public List<string> Special { get; set; }
         }
         public static List<ExtraShipData> Ships = new List<ExtraShipData>();
         void Modding.IModEntryPoint.PreLoad() {
-            Debug.Log("Loading ConquestBotMod Version 0.0.0.2");
+            Debug.Log("Loading ConquestBotMod Version 0.0.0.4");
          }
 
         void Modding.IModEntryPoint.PostLoad()
@@ -45,13 +45,7 @@ namespace ConquestBotMod
                         streamWriter.WriteLine("            \"" + playerReport.PlayerName.ToLower() + "\": {");
                         foreach (Game.AfterActionReport.ShipReport shipReport in playerReport.Ships)
                         {
-                            Debug.Log("LoadingESD");
-                            Debug.Log(Ships.Count);
-                            foreach(ExtraShipData CESD in Ships) {
-                                Debug.Log(CESD.HullID);
-                            }
                             ExtraShipData ESD = Ships.Find(CESD => CESD.HullID == shipReport.HullString);
-                            Debug.Log(ESD.HullID);
                             streamWriter.WriteLine("                \"" + shipReport.ShipName + "\": {");
                             streamWriter.WriteLine("                    \"hullnumber\": \"" + shipReport.HullString + "\",");
                             streamWriter.WriteLine("                    \"hulltype\": \"" + ESD.HullType.Remove(ESD.HullType.IndexOf('(')) + "\",");
@@ -85,6 +79,11 @@ namespace ConquestBotMod
                                 streamWriter.WriteLine($"                                \"key\": \"{component.Key}\",");
                                 streamWriter.WriteLine($"                                \"health\": {shipReport.PartStatus[component.Key].HealthPercent * 100},");
                                 streamWriter.WriteLine($"                                \"destroyed\": {shipReport.PartStatus[component.Key].IsDestroyed.ToString().ToLower()}");
+                                if (component.Special != null) {
+                                    foreach (string specialString in component.Special) {
+                                        streamWriter.WriteLine($"                                {specialString}");
+                                    }
+                                }
                                 streamWriter.WriteLine($"                            }}" + ((ESD.Components.IndexOf(component) == ESD.Components.Count - 1) ? "" : ","));
                             }
                             streamWriter.WriteLine("                        }");
@@ -123,6 +122,17 @@ namespace ConquestBotMod
                                         ShipComponent component = new ShipComponent();
                                         component.Name = hullPart.UIName;
                                         component.Key = hullPart.RpcKey;
+                                        component.Special = new List<string>(); 
+                                        List<Munitions.Magazine> magazine = Traverse.Create(component).Field("_magazines").GetValue() as List<Munitions.Magazine>;
+                                        if (magazine == null) {
+                                            magazine = Traverse.Create(component).Field("_missiles").GetValue() as List<Munitions.Magazine>;
+                                        }
+                                        Debug.Log(magazine);
+                                        if (magazine != null) {
+                                            foreach(Munitions.Magazine ammoType in magazine) {
+                                                component.Special.Add($"\"{ammoType.AmmoType}\": \"{ammoType.Quantity}\"");
+                                            }
+                                        }
                                         ESD.Components.Add(component);
                                     }
                                     Ships.Add(ESD);
