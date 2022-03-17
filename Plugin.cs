@@ -6,10 +6,19 @@ using System;
 
 namespace ConquestBotMod
 {
-    public class ConquestBotMod : Modding.IModEntryPoint
-    {
+    public class ConquestBotMod : Modding.IModEntryPoint {
+        public struct ExtraShipData {
+            public string HullID { get; set; }
+            public string HullType { get; set; }
+            public List<ShipComponent> Components { get; set; }
+        }
+        public struct ShipComponent {
+            public string Name { get; set; }
+            public string Key { get; set; }
+        }
+        public static List<ExtraShipData> Ships = new List<ExtraShipData>();
         void Modding.IModEntryPoint.PreLoad() {
-            Debug.Log("Loading ConquestBotMod Version 0.0.0.1");
+            Debug.Log("Loading ConquestBotMod Version 0.0.0.2");
          }
 
         void Modding.IModEntryPoint.PostLoad()
@@ -20,9 +29,11 @@ namespace ConquestBotMod
 
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
+
+            
             private static void WriteJSON(Game.AfterActionReport AAR)
             {
-                StreamWriter streamWriter = new StreamWriter(Application.streamingAssetsPath + string.Format("/{0}_{1}{2}_match.json", System.DateTime.Now.ToShortDateString().Replace("/", "-"), System.DateTime.Now.Hour, (System.DateTime.Now.Minute)));
+                StreamWriter streamWriter = new StreamWriter(Application.streamingAssetsPath + string.Format("/{0}_{1}{2}_match.json", System.DateTime.Now.ToShortDateString().Replace("/", "-"), System.DateTime.Now.Hour.ToString().PadLeft(2, '0'), System.DateTime.Now.Minute.ToString().PadLeft(2, '0')));
                 streamWriter.WriteLine("{");
                 streamWriter.WriteLine(string.Format("    \"winner\": \"{0}\",", AAR.WinningTeam.ToString()));
                 streamWriter.WriteLine("    \"teams\": [");
@@ -34,9 +45,16 @@ namespace ConquestBotMod
                         streamWriter.WriteLine("            \"" + playerReport.PlayerName.ToLower() + "\": {");
                         foreach (Game.AfterActionReport.ShipReport shipReport in playerReport.Ships)
                         {
+                            Debug.Log("LoadingESD");
+                            Debug.Log(Ships.Count);
+                            foreach(ExtraShipData CESD in Ships) {
+                                Debug.Log(CESD.HullID);
+                            }
+                            ExtraShipData ESD = Ships.Find(CESD => CESD.HullID == shipReport.HullString);
+                            Debug.Log(ESD.HullID);
                             streamWriter.WriteLine("                \"" + shipReport.ShipName + "\": {");
                             streamWriter.WriteLine("                    \"hullnumber\": \"" + shipReport.HullString + "\",");
-                            //streamWriter.WriteLine("                    \"hulltype\": \"" + shipReport.HullType.Remove(shipReport.HullType.IndexOf('(')) + "\",");
+                            streamWriter.WriteLine("                    \"hulltype\": \"" + ESD.HullType.Remove(ESD.HullType.IndexOf('(')) + "\",");
                             streamWriter.WriteLine(string.Format(string.Format("                    \"offensivlyCapable\": {0},", (!shipReport.WasDefanged).ToString().ToLower())));
                             streamWriter.WriteLine(string.Format("                    \"eliminated\": \"{0}\",", shipReport.Eliminated));
                             streamWriter.WriteLine("                    \"partstatus\": [");
@@ -49,7 +67,7 @@ namespace ConquestBotMod
                                 {
                                     num++;
                                 }
-                                else if (shipReport.PartStatus[key].HealthPercent > 0f && shipReport.PartStatus[key].HealthPercent < 1f)
+                                else if (shipReport.PartStatus[key].HealthPercent < 1f)
                                 {
                                     num2++;
                                 }
@@ -73,9 +91,37 @@ namespace ConquestBotMod
                 streamWriter.Close();
             }
             
+
             [HarmonyPostfix]
             public static void Postfix(Game.SkirmishGameManager __instance) {
                 Game.AfterActionReport aar = Traverse.Create(__instance).Field("_aarStarted").GetValue() as Game.AfterActionReport;
+                Game.Team<Game.SkirmishPlayer>[] teams = Traverse.Create(__instance).Field("_teams").GetValue() as Game.Team<Game.SkirmishPlayer>[];
+                foreach (Game.Team<Game.SkirmishPlayer> team in teams)
+			    {
+                    if (team.TeamID != Utility.TeamIdentifier.None)
+                    {
+                        foreach (Game.SkirmishPlayer skirmishPlayer in team.Players)
+                        {
+                            if (skirmishPlayer.PlayerFleet != null)
+                            {
+                                foreach (Ships.Ship ship in skirmishPlayer.PlayerFleet.FleetShips)
+                                {
+                                    ExtraShipData ESD = new ExtraShipData();
+                                    ESD.HullID = ship.FullHullNumber;
+                                    ESD.HullType = ship.Hull.ToString();
+                                    ESD.Components = new List<ShipComponent>();
+                                    foreach(Ships.HullPart hullPart in ship.Hull.GetAllParts().Values) {
+                                        ShipComponent component = new ShipComponent();
+                                        component.Name = hullPart.UIName;
+                                        component.Key = hullPart.RpcKey;
+                                        ESD.Components.Add(component);
+                                    }
+                                    Ships.Add(ESD);
+                                }
+                            }
+                        }
+                    }
+			    }
                 WriteJSON(aar);
             }
         }
