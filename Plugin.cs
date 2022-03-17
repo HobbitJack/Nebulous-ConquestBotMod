@@ -57,7 +57,7 @@ namespace ConquestBotMod
                             streamWriter.WriteLine("                    \"hulltype\": \"" + ESD.HullType.Remove(ESD.HullType.IndexOf('(')) + "\",");
                             streamWriter.WriteLine(string.Format(string.Format("                    \"offensivlyCapable\": {0},", (!shipReport.WasDefanged).ToString().ToLower())));
                             streamWriter.WriteLine(string.Format("                    \"eliminated\": \"{0}\",", shipReport.Eliminated));
-                            streamWriter.WriteLine("                    \"partstatus\": [");
+                            streamWriter.WriteLine("                    \"partsummary\": {");
                             int num = 0;
                             int num2 = 0;
                             int num3 = 0;
@@ -79,7 +79,16 @@ namespace ConquestBotMod
                             streamWriter.WriteLine(string.Format(string.Format("                        \"destroyed\": {0},", num)));
                             streamWriter.WriteLine(string.Format(string.Format("                        \"damaged\": {0},", num2)));
                             streamWriter.WriteLine(string.Format(string.Format("                        \"undamaged\": {0}", num3)));
-                            streamWriter.WriteLine("                    ]");
+                            streamWriter.WriteLine("                        \"components\": {");
+                            foreach (ShipComponent component in ESD.Components) {
+                                streamWriter.WriteLine($"                            \"{component.Name}\": {{");
+                                streamWriter.WriteLine($"                                \"key\": \"{component.Key}\",");
+                                streamWriter.WriteLine($"                                \"health\": {shipReport.PartStatus[component.Key].HealthPercent * 100},");
+                                streamWriter.WriteLine($"                                \"destroyed\": {shipReport.PartStatus[component.Key].IsDestroyed.ToString().ToLower()}");
+                                streamWriter.WriteLine($"                            }}" + ((ESD.Components.IndexOf(component) == ESD.Components.Count - 1) ? "" : ","));
+                            }
+                            streamWriter.WriteLine("                        }");
+                            streamWriter.WriteLine("                    }");
                             streamWriter.WriteLine("                }" + ((playerReport.Ships.IndexOf(shipReport) == playerReport.Ships.Count - 1) ? "" : ","));
                         }
                         streamWriter.WriteLine("            }" + ((teamReport.Players.IndexOf(playerReport) == teamReport.Players.Count - 1) ? "" : ","));
