@@ -16,7 +16,9 @@ namespace ConquestBotMod
             public string Key { get; set; }
             public List<string> Special { get; set; }
         }
-        public static List<ExtraShipData> Ships = new List<ExtraShipData>();
+
+        public static List<ExtraShipData> ShipList = new List<ExtraShipData>();
+        
         void Modding.IModEntryPoint.PreLoad() {
             Debug.Log("Loading ConquestBotMod Version 0.0.0.4");
          }
@@ -29,8 +31,6 @@ namespace ConquestBotMod
 
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
-
-            
             private static void WriteJSON(Game.AfterActionReport AAR)
             {
                 StreamWriter streamWriter = new StreamWriter(Application.streamingAssetsPath + string.Format("/{0}_{1}{2}_match.json", System.DateTime.Now.ToShortDateString().Replace("/", "-"), System.DateTime.Now.Hour.ToString().PadLeft(2, '0'), System.DateTime.Now.Minute.ToString().PadLeft(2, '0')));
@@ -45,7 +45,7 @@ namespace ConquestBotMod
                         streamWriter.WriteLine("            \"" + playerReport.PlayerName.ToLower() + "\": {");
                         foreach (Game.AfterActionReport.ShipReport shipReport in playerReport.Ships)
                         {
-                            ExtraShipData ESD = Ships.Find(CESD => CESD.HullID == shipReport.HullString);
+                            ExtraShipData ESD = ShipList.Find(CESD => CESD.HullID == shipReport.HullString);
                             streamWriter.WriteLine("                \"" + shipReport.ShipName + "\": {");
                             streamWriter.WriteLine("                    \"hullnumber\": \"" + shipReport.HullString + "\",");
                             streamWriter.WriteLine("                    \"hulltype\": \"" + ESD.HullType.Remove(ESD.HullType.IndexOf('(')) + "\",");
@@ -78,7 +78,7 @@ namespace ConquestBotMod
                                 streamWriter.WriteLine($"                            \"{component.Name}\": {{");
                                 streamWriter.WriteLine($"                                \"key\": \"{component.Key}\",");
                                 streamWriter.WriteLine($"                                \"health\": {shipReport.PartStatus[component.Key].HealthPercent * 100},");
-                                streamWriter.WriteLine($"                                \"destroyed\": {shipReport.PartStatus[component.Key].IsDestroyed.ToString().ToLower()}");
+                                streamWriter.WriteLine($"                                \"destroyed\": {shipReport.PartStatus[component.Key].IsDestroyed.ToString().ToLower()}" + (component.Special.Count == 0 ? "" : ","));
                                 if (component.Special != null) {
                                     foreach (string specialString in component.Special) {
                                         streamWriter.WriteLine($"                                {specialString}");
@@ -99,7 +99,6 @@ namespace ConquestBotMod
                 streamWriter.Close();
             }
             
-
             [HarmonyPostfix]
             public static void Postfix(Game.SkirmishGameManager __instance) {
                 Game.AfterActionReport aar = Traverse.Create(__instance).Field("_aarStarted").GetValue() as Game.AfterActionReport;
@@ -122,20 +121,26 @@ namespace ConquestBotMod
                                         ShipComponent component = new ShipComponent();
                                         component.Name = hullPart.UIName;
                                         component.Key = hullPart.RpcKey;
-                                        component.Special = new List<string>(); 
-                                        List<Munitions.Magazine> magazine = Traverse.Create(component).Field("_magazines").GetValue() as List<Munitions.Magazine>;
-                                        if (magazine == null) {
-                                            magazine = Traverse.Create(component).Field("_missiles").GetValue() as List<Munitions.Magazine>;
-                                        }
-                                        Debug.Log(magazine);
-                                        if (magazine != null) {
-                                            foreach(Munitions.Magazine ammoType in magazine) {
-                                                component.Special.Add($"\"{ammoType.AmmoType}\": \"{ammoType.Quantity}\"");
+                                        component.Special = new List<string>();
+                                        //Start looking for special things, specifically ammo for now and later restores
+                                        foreach(Ships.HullComponent magcomponent in ship.Hull.GetAllComponents()) {
+                                            if ((magcomponent.GetType() == typeof(Ships.BulkMagazineComponent) || magcomponent.GetType() == typeof(Ships.CellLauncherComponent)) && (magcomponent.RpcKey == component.Key)) {
+                                                List<Munitions.Magazine> magazine = Traverse.Create(magcomponent).Field("_magazines").GetValue() as List<Munitions.Magazine>;
+                                                if (magazine == null) {
+                                                    magazine = Traverse.Create(magcomponent).Field("_missiles").GetValue() as List<Munitions.Magazine>;
+                                                }
+                                                if(magazine != null) {
+                                                    component.Special.Add("\"ammotypes\": {");
+                                                    foreach(Munitions.Magazine ammoType in magazine) {
+                                                        component.Special.Add($"    \"{ammoType.AmmoType.ToString().Remove(ammoType.AmmoType.ToString().IndexOf('(') - 1)}\": {ammoType.QuantityAvailable}" + (magazine.IndexOf(ammoType) == magazine.Count - 1 ? "" : ","));
+                                                    }
+                                                    component.Special.Add("}");
+                                                }
                                             }
                                         }
                                         ESD.Components.Add(component);
                                     }
-                                    Ships.Add(ESD);
+                                    ShipList.Add(ESD);
                                 }
                             }
                         }
