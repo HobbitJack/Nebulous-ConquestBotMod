@@ -19,8 +19,13 @@ namespace ConquestBotMod
 
         public static List<ExtraShipData> ShipList = new List<ExtraShipData>();
         
+        public static object getPrivate(object obj, string privatefield)
+		{
+			return Traverse.Create(obj).Field(privatefield).GetValue();
+		}
+
         void Modding.IModEntryPoint.PreLoad() {
-            Debug.Log("Loading ConquestBotMod Version 0.0.0.4");
+            Debug.Log("Loading ConquestBotMod Version 0.0.0.5");
          }
 
         void Modding.IModEntryPoint.PostLoad()
@@ -77,8 +82,13 @@ namespace ConquestBotMod
                             foreach (ShipComponent component in ESD.Components) {
                                 streamWriter.WriteLine($"                            \"{component.Name}\": {{");
                                 streamWriter.WriteLine($"                                \"key\": \"{component.Key}\",");
+                                if (shipReport.PartStatus.ContainsKey(component.Key)) {
                                 streamWriter.WriteLine($"                                \"health\": {shipReport.PartStatus[component.Key].HealthPercent * 100},");
                                 streamWriter.WriteLine($"                                \"destroyed\": {shipReport.PartStatus[component.Key].IsDestroyed.ToString().ToLower()}" + (component.Special.Count == 0 ? "" : ","));
+                                }
+                                else {
+                                    streamWriter.WriteLine("ERROR: SOMETHING WENT WRONG PULLING THIS COMPONENT'S DATA");
+                                }
                                 if (component.Special != null) {
                                     foreach (string specialString in component.Special) {
                                         streamWriter.WriteLine($"                                {specialString}");
@@ -101,8 +111,8 @@ namespace ConquestBotMod
             
             [HarmonyPostfix]
             public static void Postfix(Game.SkirmishGameManager __instance) {
-                Game.AfterActionReport aar = Traverse.Create(__instance).Field("_aarStarted").GetValue() as Game.AfterActionReport;
-                Game.Team<Game.SkirmishPlayer>[] teams = Traverse.Create(__instance).Field("_teams").GetValue() as Game.Team<Game.SkirmishPlayer>[];
+                Game.AfterActionReport aar = getPrivate(__instance, "_aarStarted") as Game.AfterActionReport;
+                Game.Team<Game.SkirmishPlayer>[] teams = getPrivate(__instance, "_teams") as Game.Team<Game.SkirmishPlayer>[];
                 foreach (Game.Team<Game.SkirmishPlayer> team in teams)
 			    {
                     if (team.TeamID != Utility.TeamIdentifier.None)
@@ -124,17 +134,23 @@ namespace ConquestBotMod
                                         component.Special = new List<string>();
                                         //Start looking for special things, specifically ammo for now and later restores
                                         foreach(Ships.HullComponent magcomponent in ship.Hull.GetAllComponents()) {
-                                            if ((magcomponent.GetType() == typeof(Ships.BulkMagazineComponent) || magcomponent.GetType() == typeof(Ships.CellLauncherComponent)) && (magcomponent.RpcKey == component.Key)) {
-                                                List<Munitions.Magazine> magazine = Traverse.Create(magcomponent).Field("_magazines").GetValue() as List<Munitions.Magazine>;
-                                                if (magazine == null) {
-                                                    magazine = Traverse.Create(magcomponent).Field("_missiles").GetValue() as List<Munitions.Magazine>;
-                                                }
-                                                if(magazine != null) {
-                                                    component.Special.Add("\"ammotypes\": {");
-                                                    foreach(Munitions.Magazine ammoType in magazine) {
-                                                        component.Special.Add($"    \"{ammoType.AmmoType.ToString().Remove(ammoType.AmmoType.ToString().IndexOf('(') - 1)}\": {ammoType.QuantityAvailable}" + (magazine.IndexOf(ammoType) == magazine.Count - 1 ? "" : ","));
+                                            if (magcomponent.RpcKey == component.Key) {
+                                                if ((magcomponent.GetType() == typeof(Ships.BulkMagazineComponent) || magcomponent.GetType() == typeof(Ships.CellLauncherComponent))) {
+                                                    List<Munitions.Magazine> magazine = getPrivate(magcomponent, "_magazines") as List<Munitions.Magazine>;
+                                                    if (magazine == null) {
+                                                        magazine = getPrivate(magcomponent, "_missiles") as List<Munitions.Magazine>;
                                                     }
-                                                    component.Special.Add("}");
+                                                    if(magazine != null) {
+                                                        component.Special.Add("\"ammotypes\": {");
+                                                        foreach(Munitions.Magazine ammoType in magazine) {
+                                                            component.Special.Add($"    \"{ammoType.AmmoType.ToString().Remove(ammoType.AmmoType.ToString().IndexOf('(') - 1)}\": {ammoType.QuantityAvailable}" + (magazine.IndexOf(ammoType) == magazine.Count - 1 ? "" : ","));
+                                                        }
+                                                        component.Special.Add("}");
+                                                    }
+                                                }
+                                                else if (magcomponent.GetType() == typeof(Ships.DCLockerComponent)) {
+													component.Special.Add(string.Format($"\"restores\": {(int)ConquestBotMod.getPrivate(magcomponent, "_restoresRemaining")},"));
+													component.Special.Add(string.Format($"\"dcteams\": {(int)ConquestBotMod.getPrivate(magcomponent, "_teamsProduced")}"));
                                                 }
                                             }
                                         }
