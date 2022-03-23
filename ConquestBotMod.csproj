@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>ConquestBotMod</AssemblyName>
     <Description>Little mod required for the WIP ConquestBot to work.</Description>
-    <Version>1.0.0</Version>
+    <Version>0.0.0.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
