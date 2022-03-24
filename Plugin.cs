@@ -19,7 +19,7 @@ namespace ConquestBotMod
 		}
 
         void Modding.IModEntryPoint.PreLoad() {
-            Debug.Log("Loading ConquestBotMod Version 0.0.1-0");
+            Debug.Log("Loading ConquestBotMod Version 0.0.1-1");
          }
 
         void Modding.IModEntryPoint.PostLoad()
@@ -170,6 +170,26 @@ namespace ConquestBotMod
 			    }
                 WriteJSON(aar);
             }
+        }
+
+        
+        //[HarmonyPatch( typeof(Game.Class), "Method")]
+        public class Class_Method_Patch {
+            public struct ParsedShip{
+                public string HullID { get; set; }
+                public string HullType { get; set; }
+                public List<ParsedComponent> Components { get; set; }
+            }
+            public struct ParsedComponent {
+                public string Name { get; set; }
+                public string Key { get; set; }
+                public List<string> Special { get; set; }
+            }
+            public static List<ParsedShip> AllParsedShips = new List<ParsedShip>();
+            
+            //[HarmonyPostfix]
+            //public static void Postfix(Game.Class __instance) {
+            //}
         }
     }
 }
