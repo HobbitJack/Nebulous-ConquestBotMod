@@ -12,12 +12,7 @@ namespace ConquestBotMod
         }
     }
 
-    public class ConquestBotMod : Modding.IModEntryPoint {       
-        public static object getPrivate(object obj, string privatefield)
-		{
-			return Traverse.Create(obj).Field(privatefield).GetValue();
-		}
-
+    public class ConquestBotMod : Modding.IModEntryPoint {
         void Modding.IModEntryPoint.PreLoad() {
             Debug.Log("Loading ConquestBotMod Version 0.0.1-1");
          }
@@ -30,7 +25,7 @@ namespace ConquestBotMod
 
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
-            public struct ExtraShipData {
+                public struct ExtraShipData {
                 public string HullName { get; set; }
                 public string HullType { get; set; }
                 public List<ShipComponent> Components { get; set; }
@@ -155,8 +150,8 @@ namespace ConquestBotMod
                                                     }
                                                 }
                                                 else if (magcomponent.GetType() == typeof(Ships.DCLockerComponent)) {
-													component.Special.Add(string.Format($"\"restores\": {(int)ConquestBotMod.getPrivate(magcomponent, "_restoresRemaining")},"));
-													component.Special.Add(string.Format($"\"dcteams\": {(int)ConquestBotMod.getPrivate(magcomponent, "_teamsProduced")}"));
+													component.Special.Add(string.Format($"\"restores\": {(int)getPrivate(magcomponent, "_restoresRemaining")},"));
+													component.Special.Add(string.Format($"\"dcteams\": {(int)getPrivate(magcomponent, "_teamsProduced")}"));
                                                 }
                                             }
                                         }
