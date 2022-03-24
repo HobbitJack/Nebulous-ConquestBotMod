@@ -5,27 +5,21 @@ using System.IO;
 
 namespace ConquestBotMod
 {
-    public class ConquestBotMod : Modding.IModEntryPoint {
-        public struct ExtraShipData {
-            public string HullID { get; set; }
-            public string HullType { get; set; }
-            public List<ShipComponent> Components { get; set; }
+    public static class UtilityFunctions { 
+        static object getPrivate(object obj, string privatefield)
+        {
+            return Traverse.Create(obj).Field(privatefield).GetValue();
         }
-        public struct ShipComponent {
-            public string Name { get; set; }
-            public string Key { get; set; }
-            public List<string> Special { get; set; }
-        }
+    }
 
-        public static List<ExtraShipData> ShipList = new List<ExtraShipData>();
-        
+    public class ConquestBotMod : Modding.IModEntryPoint {       
         public static object getPrivate(object obj, string privatefield)
 		{
 			return Traverse.Create(obj).Field(privatefield).GetValue();
 		}
 
         void Modding.IModEntryPoint.PreLoad() {
-            Debug.Log("Loading ConquestBotMod Version 0.0.0.5");
+            Debug.Log("Loading ConquestBotMod Version 0.0.1-0");
          }
 
         void Modding.IModEntryPoint.PostLoad()
@@ -36,6 +30,18 @@ namespace ConquestBotMod
 
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
+            public struct ExtraShipData {
+                public string HullID { get; set; }
+                public string HullType { get; set; }
+                public List<ShipComponent> Components { get; set; }
+            }
+            public struct ShipComponent {
+                public string Name { get; set; }
+                public string Key { get; set; }
+                public List<string> Special { get; set; }
+            }
+            public static List<ExtraShipData> ShipList = new List<ExtraShipData>();
+
             private static void WriteJSON(Game.AfterActionReport AAR)
             {
                 StreamWriter streamWriter = new StreamWriter(Application.streamingAssetsPath + string.Format("/{0}_{1}{2}_match.json", System.DateTime.Now.ToShortDateString().Replace("/", "-"), System.DateTime.Now.Hour.ToString().PadLeft(2, '0'), System.DateTime.Now.Minute.ToString().PadLeft(2, '0')));
