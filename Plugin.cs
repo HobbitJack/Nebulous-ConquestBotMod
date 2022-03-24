@@ -31,7 +31,7 @@ namespace ConquestBotMod
         [HarmonyPatch( typeof(Game.SkirmishGameManager), "OnClientStopped")]
         public class SkirmishGameManger_OnClientStopped_Patch {
             public struct ExtraShipData {
-                public string HullID { get; set; }
+                public string HullName { get; set; }
                 public string HullType { get; set; }
                 public List<ShipComponent> Components { get; set; }
             }
@@ -56,7 +56,7 @@ namespace ConquestBotMod
                         streamWriter.WriteLine("            \"" + playerReport.PlayerName.ToLower() + "\": {");
                         foreach (Game.AfterActionReport.ShipReport shipReport in playerReport.Ships)
                         {
-                            ExtraShipData ESD = ShipList.Find(CESD => CESD.HullID == shipReport.HullString);
+                            ExtraShipData ESD = ShipList.Find(CESD => CESD.HullName == shipReport.ShipName);
                             streamWriter.WriteLine("                \"" + shipReport.ShipName + "\": {");
                             streamWriter.WriteLine("                    \"hullnumber\": \"" + shipReport.HullString + "\",");
                             streamWriter.WriteLine("                    \"hulltype\": \"" + ESD.HullType.Remove(ESD.HullType.IndexOf('(')) + "\",");
@@ -130,7 +130,7 @@ namespace ConquestBotMod
                                 foreach (Ships.Ship ship in skirmishPlayer.PlayerFleet.FleetShips)
                                 {
                                     ExtraShipData ESD = new ExtraShipData();
-                                    ESD.HullID = ship.FullHullNumber;
+                                    ESD.HullName = ship.ShipName;
                                     ESD.HullType = ship.Hull.ToString();
                                     ESD.Components = new List<ShipComponent>();
                                     foreach(Ships.HullPart hullPart in ship.Hull.GetAllParts().Values) {
