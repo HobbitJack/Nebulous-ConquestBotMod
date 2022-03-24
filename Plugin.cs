@@ -124,7 +124,7 @@ namespace ConquestBotMod
                                 foreach (Ships.Ship ship in skirmishPlayer.PlayerFleet.FleetShips)
                                 {
                                     ExtraShipData ESD = new ExtraShipData();
-                                    ESD.HullName = ship.name;
+                                    ESD.HullName = ship.ShipName;
                                     ESD.HullType = ship.Hull.ToString();
                                     ESD.Components = new List<ShipComponent>();
                                     foreach(Ships.HullPart hullPart in ship.Hull.GetAllParts().Values) {
