@@ -78,7 +78,7 @@ namespace ConquestBotMod
                             }
                             streamWriter.WriteLine(string.Format(string.Format("                        \"destroyed\": {0},", num)));
                             streamWriter.WriteLine(string.Format(string.Format("                        \"damaged\": {0},", num2)));
-                            streamWriter.WriteLine(string.Format(string.Format("                        \"undamaged\": {0}", num3)));
+                            streamWriter.WriteLine(string.Format(string.Format("                        \"undamaged\": {0},", num3)));
                             streamWriter.WriteLine("                        \"components\": {");
                             foreach (ShipComponent component in ESD.Components) {
                                 streamWriter.WriteLine($"                            \"{component.Name}\": {{");
